@@ -3,6 +3,7 @@
 const elasticsearch = require('elasticsearch');
 const mongo = require('mongodb');
 const MongoClient = require('mongodb').MongoClient;
+const util = require('util');
 
 const url = 'mongodb://localhost:27017/';
 
@@ -24,13 +25,15 @@ MongoClient.connect(url, {useNewUrlParser: true},  function(err, db){
     var collection = dbo.collection('sessions');
     collection.find().toArray(function(err, result){
         if(err) throw err;
-        var result2 = JSON.stringify(result);
-        mongoToJSON(result2);
+        console.log(util.isArray(result)? 'yes, its an array': 'no its not an array');
+        // var result2 = JSON.stringify(result);
+        mongoToJSON(result);
         db.close();
     });
 })
 
 function bulkIndex(index, type, data){
+    console.log(data[0].client_id, data[0].sessions);
     let bulkBody = [];
     data.forEach(item => {
         bulkBody.push({
@@ -40,13 +43,15 @@ function bulkIndex(index, type, data){
         })
 
         bulkBody.push({
-            client_id: data.client_id,
-            sessions: data.sessions
+            client_id: item.client_id,
+            sessions: item.sessions
         })
     });
+
+    console.log(...bulkBody);
 }
 
-function mongoToJSON(result2){
-    console.log(result[0]);
-    bulkIndex('sessionArr', '_doc', result2);
+function mongoToJSON(data){
+    console.log(typeof data);
+    bulkIndex('sessionArr', '_doc', data);
 }
