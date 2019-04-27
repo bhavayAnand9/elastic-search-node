@@ -4,6 +4,11 @@
 const index_name_for_session_array = 'test_session_array';
 const index_name_for_session_fields = 'test_session_fields';
 
+//search queries
+const que2 = '5cb7bca0c6726e001f3f5e54';
+const que='5cb7bca0c6726e001f3f5e24';
+
+
 const elasticsearch = require('elasticsearch');
 const util = require('util');
 
@@ -34,18 +39,64 @@ const esClient = new elasticsearch.Client({
 
 
 
-querySessionArray(index_name_for_session_array, '_doc', result);
-querySessionFields(index_name_for_session_fields, '_doc', result);
+querySessionArray(index_name_for_session_array, '_doc', que);
+// querySessionFields(index_name_for_session_fields, '_doc', que);
 
 
 function generateRoutingKey(hex){
     return parseInt(hex.toString().slice(-11), 16)%7;
 }
 
-function querySessionFields(index, type, data){
+async function querySessionFields(index, type, data){
+    const { hits } = await esClient.search({
+        index: index_name_for_session_fields,
+        body: {
+          query: {
+            bool: {
+              must: [
+                {
+                  match: {
+                    active: true
+                  }
+                },
+                {
+                  query_string: {
+                    fields: ["diagnoses", "assessment_conclusion", "assessments", "progress", "client_id", "archivedSessions"],
+                    query: que
+                  }
+                }
+              ]
+            }
 
+          }
+        }
+    });
+
+    console.log(hits);
 }
 
-function querySessionArray(index, type, data){
-
+async function querySessionArray(index, type, data){
+  const { hits } = await esClient.search({
+      index: index_name_for_session_array,
+      type: type,
+      body: {
+        query: {
+          bool: {
+            must: [
+              {
+                match: {
+                  active: true
+                }
+              },
+              {
+                query_string: {
+                  query: data
+                }
+              }
+            ]
+          }
+        }
+      }
+  });
+  console.log(hits);
 }

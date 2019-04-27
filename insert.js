@@ -87,6 +87,7 @@ function indexSessionFields(index, type, data){
             routing: generateRoutingKey(item.client_id),
             body: {
                 client_id: item.client_id,
+                active: item.active,
                 mongoid: item._id,
                 archivedSessions: item.archivedSessions,
                 progress: item.progress,
@@ -114,7 +115,8 @@ function indexSessionArray(index, type, data){
             body: {
                 client_id: item.client_id,
                 mongoid: item._id,
-                sessions: item.sessions
+                sessions: item.sessions,
+                active: item.active
             }
         }).then(response => console.log(`item indexed array ${item.client_id}`))
         .catch(e => {
