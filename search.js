@@ -3,14 +3,14 @@
 //Some const values
 const index_name_for_session_array = 'test_session_array';
 const index_name_for_session_fields = 'test_session_fields';
-
-//search queries
-const que2 = '5cb7bca0c6726e001f3f5e54';
-const que='5cb7bca0c6726e001f3f5e24';
-
-
 const elasticsearch = require('elasticsearch');
 const util = require('util');
+
+
+//DEFINE SEARCH QUERY HERE
+const que2 = 'glass ' + '~';
+const que= 'glass OR jesus' + '~';
+const que3 = '5cb7bca0c6726e001f3f5d92';
 
 
 const esClient = new elasticsearch.Client({
@@ -18,37 +18,26 @@ const esClient = new elasticsearch.Client({
     log: 'error'
 });
 
-// const esClient = new elasticsearch.Client({
-//     cloud: {
-//         id: 'rxclinic:dXMtZWFzdC0xLmF3cy5mb3VuZC5pbyRlMDljODczZTg2ZjY0N2ZmYmNmZDk3YjVmMTc1MmE4MSRkMDAxNWE0ODg0OTM0ZGYzYWZjZWM1MDE0ZGNjMzAxNA==',
-//         username: 'elastic',
-//         password: 'qazPLM22@22'
-//       }
-// });
 
-// client.ping({
-//   // ping usually has a 3000ms timeout
-//   requestTimeout: 1000
-// }, function (error) {
-//   if (error) {
-//     console.trace('elasticsearch cluster is down!');
-//   } else {
-//     console.log('All is well');
-//   }
-// });
-
-
-
-querySessionArray(index_name_for_session_array, '_doc', que);
+// SEARCH QUERY FUNCTION CALL
+//UNCOMMENT FUNCTIONS THAT YOU NEED TO RUN
+// querySessionArray(index_name_for_session_array, '_doc', que);
 // querySessionFields(index_name_for_session_fields, '_doc', que);
+// querySessionArrayWithClientID(index_name_for_session_array, '_doc', que3);
 
+//HELPER FUNCTIONS
 
 function generateRoutingKey(hex){
     return parseInt(hex.toString().slice(-11), 16)%7;
 }
 
+
+//DIFFERENT SEARCH QUERY FUNCTIONS DEFINITIONS
+
+//SEARCHES SESSIONS FIELD INDEX FOR A QUERY STRING
 async function querySessionFields(index, type, data){
-    const { hits } = await esClient.search({
+    // const { hits } = await esClient.search({
+      const body = await esClient.search({
         index: index_name_for_session_fields,
         body: {
           query: {
@@ -71,12 +60,13 @@ async function querySessionFields(index, type, data){
           }
         }
     });
-
-    console.log(hits);
+    console.log(body);
 }
 
+//SEARCHES SESSIONS ARRAY INDEX FOR A QUERY STRING
 async function querySessionArray(index, type, data){
-  const { hits } = await esClient.search({
+  // const { hits } = await esClient.search({
+    const body = await esClient.search({  
       index: index_name_for_session_array,
       type: type,
       body: {
@@ -98,5 +88,34 @@ async function querySessionArray(index, type, data){
         }
       }
   });
-  console.log(hits);
+  console.log(body);
+}
+
+//FOR THIS FUNCTION DATA SHOULD BE A CLIENTID STRING
+async function querySessionArrayWithClientID(index, type, data){
+  // const { hits } = await esClient.search({
+    const body  = await esClient.search({
+      index: index_name_for_session_array,
+      type: type,
+      routing: generateRoutingKey(data),
+      body: {
+        query: {
+          bool: {
+            must: [
+              {
+                match: {
+                  active: true
+                }
+              },
+              {
+                query_string: {
+                  query: data
+                }
+              }
+            ]
+          }
+        }
+      }
+    });
+  console.log(body);
 }
